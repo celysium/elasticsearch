@@ -62,7 +62,7 @@ class Elasticsearch
 
         return new LengthAwarePaginator($result, $total, $size, $page, ['path' => $url]);
     }
-    public function setPaginationParams(int $page = 1): void
+    private function setPaginationParams(int $page): void
     {
         $this->params['from'] = ($page - 1) * $this->params['size'];
     }

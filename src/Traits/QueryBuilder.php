@@ -23,13 +23,14 @@ trait QueryBuilder
     {
         $body = $this->params['body'] ?? [];
         unset($this->params['body']);
+        unset($this->params['index']);
         return json_encode(array_merge($this->params, $body));
     }
 
-    public function index($index): self
+    public function index(string $name): self
     {
-        $this->index = $index;
-        $this->params['index'] = $index;
+        $this->index = $name;
+        $this->params['index'] = $name;
         return $this;
     }
 
@@ -160,13 +161,5 @@ trait QueryBuilder
         $this->params['body']['query']['bool']['must_not'] = array_merge($this->params['query']['bool']['must_not'], $mustNot);
 
         return $this;
-    }
-
-    public function __call($name, $arguments = []): mixed
-    {
-        if(method_exists($this->client, $name)) {
-            return $this->client->$name($arguments);
-        }
-        return new Exception("$name method not found.");
     }
 }

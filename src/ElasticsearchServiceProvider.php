@@ -18,6 +18,10 @@ class ElasticsearchServiceProvider extends ServiceProvider
             __DIR__.'/../config/elasticsearch.php',
             'elasticsearch'
         );
+
+        $this->app->bind('elasticsearch', function () {
+            return new Elasticsearch();
+        });
     }
 
     /**
