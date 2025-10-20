@@ -11,7 +11,7 @@ class Elasticsearch
 {
     use QueryBuilder;
 
-    protected null $request = null;
+    protected mixed $request = null;
     private Client $client;
 
     public function __construct()
@@ -39,7 +39,7 @@ class Elasticsearch
     {
         $params = $this->getParams();
         $result = $this->client->search($params);
-        if (isset($this->params['aggs'])) {
+        if (isset($this->params['body']['aggs'])) {
             return $this->responseAggregations($result);
         } else {
             return $this->response($result);
