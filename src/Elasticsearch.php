@@ -86,4 +86,43 @@ class Elasticsearch
     {
         return $result['hits']['total']['value'];
     }
+
+    public function create(array $attributes): array
+    {
+        $params = [
+            'index' => $this->index,
+            'body'  => $attributes
+        ];
+        if(isset($attributes['id'])) {
+            $params['id'] = $attributes['id'];
+        }
+        $response = $this->client->index($params);
+
+        $attributes['id'] = $response['_id'];
+
+        return $attributes;
+    }
+
+    public function update(string $id, array $attributes): array
+    {
+        $response = $this->client->update([
+            'index' => $this->index,
+            'id'    => $id,
+            'body'  => $attributes
+        ]);
+
+        $attributes['id'] = $response['_id'];
+
+        return $attributes;
+    }
+
+    public function delete(string $id): string
+    {
+        $response = $this->client->delete([
+            'index' => $this->index,
+            'id'    => $id,
+        ]);
+
+        return $response['_id'];
+    }
 }
