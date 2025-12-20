@@ -2,6 +2,7 @@
 
 namespace Celysium\Elasticsearch;
 
+use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\Exception\HttpClientException;
@@ -11,13 +12,16 @@ class Elasticsearch
 {
     use QueryBuilder;
 
-    protected mixed $request = null;
     private Client $client;
 
     public function __construct()
     {
         $this->client = Connection::getClient();
-        $this->request = app('request');
+    }
+
+    public static function query(): self
+    {
+        return new self();
     }
 
     public function getClient(): Client
@@ -46,11 +50,10 @@ class Elasticsearch
         }
     }
 
-    public function pagination($size = 15): LengthAwarePaginator
+    public function pagination($size = 15, $page = 1, array $options = []): LengthAwarePaginator
     {
         $this->size($size);
 
-        $page = $this->request->get('page', 1);
         $this->setPaginationParams($page);
 
         $params = $this->getParams();
@@ -58,9 +61,8 @@ class Elasticsearch
 
         $total  = $this->total($result);
         $result = $this->response($result);
-        $url    = $url ?? $this->request->url();
 
-        return new LengthAwarePaginator($result, $total, $size, $page, ['path' => $url]);
+        return new LengthAwarePaginator($result, $total, $size, $page, $options);
     }
     private function setPaginationParams(int $page): void
     {
@@ -85,6 +87,29 @@ class Elasticsearch
     private function total($result): array
     {
         return $result['hits']['total']['value'];
+    }
+
+    public function find(string $id, array $source = ['*'])
+    {
+        $params = [
+            'index' => $this->index,
+            'id' => $id
+        ];
+        if($source != ['*']) {
+            $params['_source'] = $source;
+        }
+        try {
+            $response = $this->client->get($params);
+
+            return $response['_source'];
+        }
+        catch (ClientResponseException $e) {
+            if ($e->getCode() === 404) {
+                return null;
+            } else {
+                throw $e;
+            }
+        }
     }
 
     public function create(array $attributes): array

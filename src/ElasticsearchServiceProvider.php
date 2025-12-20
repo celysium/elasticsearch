@@ -16,7 +16,7 @@ class ElasticsearchServiceProvider extends ServiceProvider
     {
         $this->mergeConfigFrom(
             __DIR__.'/../config/elasticsearch.php',
-            'elasticsearch'
+            'database.elasticsearch'
         );
 
         $this->app->bind('elasticsearch', function () {
@@ -31,9 +31,6 @@ class ElasticsearchServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->publishes([
-            __DIR__.'/../config/elasticsearch.php' => base_path('config/elasticsearch.php'),
-        ], 'config');
 
     }
 
