@@ -14,19 +14,28 @@ class Elasticsearch
 
     private Client $client;
 
-    public function __construct()
+    public function __construct(array $attributes = [])
     {
         $this->client = Connection::getClient();
-    }
-
-    public static function query(): self
-    {
-        return new self();
+        $this->fill($attributes);
     }
 
     public function getClient(): Client
     {
         return $this->client;
+    }
+
+    public static function query(): static
+    {
+        return new static();
+    }
+
+    public function fill(array $attributes): static
+    {
+        foreach ($attributes as $name => $value) {
+            $this->$name = $value;
+        }
+        return $this;
     }
 
     public function count(): int
