@@ -2,16 +2,20 @@
 
 namespace Celysium\Elasticsearch\Traits;
 
-use Exception;
 use Illuminate\Support\Arr;
 
-trait QueryBuilder
+trait Builder
 {
     protected string $index;
 
     protected bool $trackTotalHits = true;
 
     private array $params = [];
+
+    public static function query(): static
+    {
+        return new static();
+    }
 
     public function getParams(): array
     {

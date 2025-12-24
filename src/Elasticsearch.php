@@ -5,12 +5,12 @@ namespace Celysium\Elasticsearch;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Elastic\Elasticsearch\Client;
-use Elastic\Elasticsearch\Exception\HttpClientException;
-use Celysium\Elasticsearch\Traits\QueryBuilder;
+use Celysium\Elasticsearch\Traits\Attribute;
+use Celysium\Elasticsearch\Traits\Builder;
 
 class Elasticsearch
 {
-    use QueryBuilder;
+    use Builder, Attribute;
 
     private Client $client;
 
@@ -25,27 +25,11 @@ class Elasticsearch
         return $this->client;
     }
 
-    public static function query(): static
-    {
-        return new static();
-    }
-
-    public function fill(array $attributes): static
-    {
-        foreach ($attributes as $name => $value) {
-            $this->$name = $value;
-        }
-        return $this;
-    }
-
     public function count(): int
     {
         $params = $this->getParams();
         $result = $this->client->count($params);
-        if (isset($result['count'])) {
-            return (int) $result['count'];
-        }
-        throw new HttpClientException();
+        return (int) $result['count'];
     }
 
     public function search(): array
@@ -53,7 +37,7 @@ class Elasticsearch
         $params = $this->getParams();
         $result = $this->client->search($params);
         if (isset($this->params['body']['aggs'])) {
-            return $this->responseAggregations($result);
+            return $result['aggregations'];
         } else {
             return $this->response($result);
         }
@@ -63,39 +47,26 @@ class Elasticsearch
     {
         $this->size($size);
 
-        $this->setPaginationParams($page);
+        $this->params['from'] = ($page - 1) * $size;
 
         $params = $this->getParams();
         $result = $this->client->search($params);
 
-        $total  = $this->total($result);
+        $total  = $result['hits']['total']['value'];
         $result = $this->response($result);
 
         return new LengthAwarePaginator($result, $total, $size, $page, $options);
-    }
-    private function setPaginationParams(int $page): void
-    {
-        $this->params['from'] = ($page - 1) * $this->params['size'];
     }
 
     private function response($result): array
     {
         $data = [];
-        foreach ($result['hits']['hits'] as $hit) {
-            $data[] = $hit['_source'];
+        foreach ($result['hits']['hits'] as $index => $hit) {
+            $data[$index] = $hit['_source'];
+            $data[$index]['id'] = $hit['_id'];
         }
 
         return $data;
-    }
-
-    private function responseAggregations($result): array
-    {
-        return $result['aggregations'];
-    }
-
-    private function total($result): array
-    {
-        return $result['hits']['total']['value'];
     }
 
     public function find(string $id, array $source = ['*'])
@@ -110,7 +81,7 @@ class Elasticsearch
         try {
             $response = $this->client->get($params);
 
-            return $response['_source'];
+            return array_merge($response['_source'], [$response['_id']]);
         }
         catch (ClientResponseException $e) {
             if ($e->getCode() === 404) {
@@ -123,6 +94,7 @@ class Elasticsearch
 
     public function create(array $attributes): array
     {
+        $this->throwMissingAttributes($attributes);
         $params = [
             'index' => $this->index,
             'body'  => $attributes
@@ -139,6 +111,7 @@ class Elasticsearch
 
     public function update(string $id, array $attributes): array
     {
+        $this->throwUnknownFields($attributes);
         $response = $this->client->update([
             'index' => $this->index,
             'id'    => $id,
@@ -148,6 +121,14 @@ class Elasticsearch
         $attributes['id'] = $response['_id'];
 
         return $attributes;
+    }
+
+    public function save(): array
+    {
+        if(isset($this->attributes['id'])) {
+            return $this->update($this->attributes['id'], $this->attributes);
+        }
+        return $this->create($this->attributes);
     }
 
     public function delete(string $id): string
