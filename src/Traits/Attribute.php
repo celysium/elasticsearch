@@ -55,7 +55,7 @@ trait Attribute
     {
         $keys = array_keys($attributes);
         foreach ($this->fields as $field) {
-            if(!in_array($field, $keys) || $field != 'id') {
+            if(!in_array($field, $keys) && $field != 'id') {
                 throw new MissingFieldException($this, $field);
             }
         }
