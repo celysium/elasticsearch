@@ -61,11 +61,9 @@ class Elasticsearch
     private function response($result): array
     {
         $data = [];
-        foreach ($result['hits']['hits'] as $index => $hit) {
-            $data[$index] = $hit['_source'];
-            $data[$index]['id'] = $hit['_id'];
+        foreach ($result['hits']['hits'] as $hit) {
+            $data[] = new static(array_merge(['id' => $hit['_id']],$hit['_source']));
         }
-
         return $data;
     }
 
