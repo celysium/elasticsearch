@@ -98,71 +98,59 @@ trait Builder
         if ($to) {
             $ranges[$field][$secondOperator] = $to;
         }
-        $this->params['body']['query']['bool']['must'] = array_merge($this->params['query']['bool']['must'], ['range' => [$ranges]]);
+        $this->params['body']['query']['bool']['must'][] = [
+            'range' => [
+                $ranges
+            ]
+        ];
 
         return $this;
     }
 
-    public function where(string $field, array $value): self
+    public function where(string $field, mixed $value): self
     {
-        $must = [
-            [
-                "term" => [
-                    $field => [
-                        "value" => $value
-                    ],
+        $this->params['body']['query']['bool']['must'][] = [
+            "term" => [
+                $field => [
+                    "value" => $value
                 ],
             ],
         ];
-
-        $this->params['body']['query']['bool']['must'] = array_merge($this->params['query']['bool']['must'], $must);
 
         return $this;
     }
 
-    public function whereNot(string $field, array $value): self
+    public function whereNot(string $field, mixed $value): self
     {
-        $mustNot = [
-            [
-                "term" => [
-                    $field => [
-                        "value" => $value
-                    ],
+        $this->params['body']['query']['bool']['must_not'][] = [
+            "term" => [
+                $field => [
+                    "value" => $value
                 ],
             ],
         ];
-
-        $this->params['body']['query']['bool']['must_not'] = array_merge($this->params['query']['bool']['must_not'], $mustNot);
 
         return $this;
     }
 
     public function whereIn(string $field, array $values): self
     {
-        $must = [
-            [
-                "terms" => [
-                    $field => $values,
-                ],
+        $this->params['body']['query']['bool']['must'][] = [
+            "terms" => [
+                $field => $values,
             ],
         ];
-
-        $this->params['body']['query']['bool']['must'] = array_merge($this->params['query']['bool']['must'], $must);
 
         return $this;
     }
 
     public function whereNotIn(string $field, array $values): self
     {
-        $mustNot = [
-            [
-                "terms" => [
-                    $field => $values,
-                ],
+        $this->params['body']['query']['bool']['must_not'][] = [
+            "terms" => [
+                $field => $values,
             ],
         ];
-
-        $this->params['body']['query']['bool']['must_not'] = array_merge($this->params['query']['bool']['must_not'], $mustNot);
 
         return $this;
     }
