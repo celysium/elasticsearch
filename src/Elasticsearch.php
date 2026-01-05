@@ -12,30 +12,30 @@ class Elasticsearch
 {
     use Builder, Attribute;
 
-    private Client $client;
+    private static Client $client;
 
     public function __construct(array $attributes = [])
     {
-        $this->client = Connection::getClient();
         $this->fill($attributes);
+        self::connection();
     }
 
-    public function getClient(): Client
+    public static function connection(): Client
     {
-        return $this->client;
+        return self::$client = Connection::getClient();
     }
 
     public function count(): int
     {
         $params = $this->getParams();
-        $result = $this->client->count($params);
+        $result = self::$client->count($params);
         return (int) $result['count'];
     }
 
     public function search(): array
     {
         $params = $this->getParams();
-        $result = $this->client->search($params);
+        $result = self::$client->search($params);
         if (isset($this->params['body']['aggs'])) {
             return $result['aggregations'];
         } else {
@@ -50,7 +50,7 @@ class Elasticsearch
         $this->params['from'] = ($page - 1) * $size;
 
         $params = $this->getParams();
-        $result = $this->client->search($params);
+        $result = self::$client->search($params);
 
         $total  = $result['hits']['total']['value'];
         $result = $this->response($result);
@@ -77,7 +77,7 @@ class Elasticsearch
             $params['_source'] = $source;
         }
         try {
-            $response = $this->client->get($params);
+            $response = self::$client->get($params);
 
             return new static(array_merge($response['_source'], [$response['_id']]));
         }
@@ -100,7 +100,7 @@ class Elasticsearch
         if(isset($attributes['id'])) {
             $params['id'] = $attributes['id'];
         }
-        $response = $this->client->index($params);
+        $response = self::$client->index($params);
 
         $attributes['id'] = $response['_id'];
 
@@ -110,7 +110,7 @@ class Elasticsearch
     public function update(string $id, array $attributes): static
     {
         $this->throwUnknownFields($attributes);
-        $response = $this->client->update([
+        $response = self::$client->update([
             'index' => $this->index,
             'id'    => $id,
             'body'  => $attributes
@@ -131,7 +131,7 @@ class Elasticsearch
 
     public function delete(string $id): string
     {
-        $response = $this->client->delete([
+        $response = self::$client->delete([
             'index' => $this->index,
             'id'    => $id,
         ]);
