@@ -25,38 +25,39 @@ trait Builder
 
     public function toJson(): string
     {
-        $body = $this->params['body'] ?? [];
-        unset($this->params['body']);
-        unset($this->params['index']);
-        return json_encode(array_merge($this->params, $body));
+        $params = $this->params;
+        $params = array_merge($params, $params['body']);
+        unset($params['body']);
+        unset($params['index']);
+        return json_encode($params);
     }
 
-    public function index(string $name): self
+    public function index(string $name): static
     {
-        $this->index = $name;
         $this->params['index'] = $name;
+        $this->index = $name;
         return $this;
     }
 
-    public function param(string $key, mixed $value): self
+    public function param(string $key, mixed $value): static
     {
         Arr::set($this->params, $key, $value);
         return $this;
     }
 
-    public function aggregation(array $aggregations): self
+    public function aggregation(array $aggregations): static
     {
         $this->params['body']['aggs'] = array_merge($this->params['aggs'], $aggregations);
         return $this;
     }
 
-    public function raw(array $params): self
+    public function raw(array $params): static
     {
         $this->params = array_merge($this->params, $params);
         return $this;
     }
 
-    public function sort(string $column, string $direction = 'asc', bool $isDate = false): self
+    public function sort(string $column, string $direction = 'asc', bool $isDate = false): static
     {
         $this->params['sort'] = [
             $column => [
@@ -71,18 +72,18 @@ trait Builder
         return $this;
     }
 
-    public function sortDesc(string $column, bool $isDate = false): self
+    public function sortDesc(string $column, bool $isDate = false): static
     {
        return $this->sort($column, 'desc', $isDate);
     }
 
-    public function size($size = 0) : self
+    public function size($size = 0) : static
     {
         $this->params['size'] = $size;
         return $this;
     }
 
-    public function whereRange(string $field, $from = null, $to = null, $firstOperator = 'gte', $secondOperator = 'lte'): self
+    public function whereRange(string $field, $from = null, $to = null, $firstOperator = 'gte', $secondOperator = 'lte'): static
     {
         if (!$from && !$to) {
             return $this;
@@ -107,7 +108,7 @@ trait Builder
         return $this;
     }
 
-    public function where(string $field, mixed $value): self
+    public function where(string $field, mixed $value): static
     {
         $this->params['body']['query']['bool']['must'][] = [
             "term" => [
@@ -120,7 +121,7 @@ trait Builder
         return $this;
     }
 
-    public function whereNot(string $field, mixed $value): self
+    public function whereNot(string $field, mixed $value): static
     {
         $this->params['body']['query']['bool']['must_not'][] = [
             "term" => [
@@ -133,7 +134,7 @@ trait Builder
         return $this;
     }
 
-    public function whereIn(string $field, array $values): self
+    public function whereIn(string $field, array $values): static
     {
         $this->params['body']['query']['bool']['must'][] = [
             "terms" => [
@@ -144,7 +145,7 @@ trait Builder
         return $this;
     }
 
-    public function whereNotIn(string $field, array $values): self
+    public function whereNotIn(string $field, array $values): static
     {
         $this->params['body']['query']['bool']['must_not'][] = [
             "terms" => [

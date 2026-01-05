@@ -67,7 +67,7 @@ class Elasticsearch
         return $data;
     }
 
-    public function find(string $id, array $source = ['*'])
+    public function find(string $id, array $source = ['*']): ?static
     {
         $params = [
             'index' => $this->index,
@@ -79,7 +79,7 @@ class Elasticsearch
         try {
             $response = $this->client->get($params);
 
-            return array_merge($response['_source'], [$response['_id']]);
+            return new static(array_merge($response['_source'], [$response['_id']]));
         }
         catch (ClientResponseException $e) {
             if ($e->getCode() === 404) {
@@ -90,7 +90,7 @@ class Elasticsearch
         }
     }
 
-    public function create(array $attributes): array
+    public function create(array $attributes): static
     {
         $this->throwMissingAttributes($attributes);
         $params = [
@@ -104,10 +104,10 @@ class Elasticsearch
 
         $attributes['id'] = $response['_id'];
 
-        return $attributes;
+        return new static($attributes);
     }
 
-    public function update(string $id, array $attributes): array
+    public function update(string $id, array $attributes): static
     {
         $this->throwUnknownFields($attributes);
         $response = $this->client->update([
@@ -118,10 +118,10 @@ class Elasticsearch
 
         $attributes['id'] = $response['_id'];
 
-        return $attributes;
+        return new static($attributes);
     }
 
-    public function save(): array
+    public function save(): static
     {
         if(isset($this->attributes['id'])) {
             return $this->update($this->attributes['id'], $this->attributes);
