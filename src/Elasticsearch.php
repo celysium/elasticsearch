@@ -7,6 +7,7 @@ use Illuminate\Pagination\LengthAwarePaginator;
 use Elastic\Elasticsearch\Client;
 use Celysium\Elasticsearch\Traits\Attribute;
 use Celysium\Elasticsearch\Traits\Builder;
+use Illuminate\Support\Collection;
 
 class Elasticsearch
 {
@@ -17,29 +18,29 @@ class Elasticsearch
     public function __construct(array $attributes = [])
     {
         $this->fill($attributes);
-        self::connection();
+        self::$client = Connection::getClient();
     }
 
-    public static function connection(): Client
+    public static function connection(): Connection
     {
-        return self::$client = Connection::getClient();
+        return new Connection;
     }
 
     public function count(): int
     {
         $params = $this->getParams();
-        $result = self::$client->count($params);
-        return (int) $result['count'];
+        $response = self::$client->count($params);
+        return (int) $response['count'];
     }
 
-    public function search(): array
+    public function search(): Collection
     {
         $params = $this->getParams();
-        $result = self::$client->search($params);
+        $response = self::$client->search($params);
         if (isset($this->params['body']['aggs'])) {
-            return $result['aggregations'];
+            return new Collection($response['aggregations']);
         } else {
-            return $this->response($result);
+            return $this->response($response);
         }
     }
 
@@ -50,21 +51,21 @@ class Elasticsearch
         $this->params['from'] = ($page - 1) * $size;
 
         $params = $this->getParams();
-        $result = self::$client->search($params);
+        $response = self::$client->search($params);
 
-        $total  = $result['hits']['total']['value'];
-        $result = $this->response($result);
+        $total  = $response['hits']['total']['value'];
+        $response = $this->response($response);
 
-        return new LengthAwarePaginator($result, $total, $size, $page, $options);
+        return new LengthAwarePaginator($response, $total, $size, $page, $options);
     }
 
-    private function response($result): array
+    private function response($response): Collection
     {
         $data = [];
-        foreach ($result['hits']['hits'] as $hit) {
+        foreach ($response['hits']['hits'] as $hit) {
             $data[] = new static(array_merge(['id' => $hit['_id']],$hit['_source']));
         }
-        return $data;
+        return new Collection($data);
     }
 
     public function find(string $id, array $source = ['*']): ?static

@@ -2,12 +2,21 @@
 
 namespace Celysium\Elasticsearch;
 
+use Celysium\Elasticsearch\Traits\Builder;
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
 
 class Connection
 {
-	public static function getClient(): Client
+    use Builder;
+    private static Client $client;
+
+    public function __construct()
+    {
+        self::$client = self::getClient();
+    }
+
+    public static function getClient(): Client
 	{
 		$config = config('database.elasticsearch');
 
@@ -22,5 +31,10 @@ class Connection
 			->setSSLVerification($config['ssl_verification'] ?? false)
 			->build();
 	}
+
+    public function __call(string $name, array $params)
+    {
+        return self::$client->$name(array_merge($this->params, $params));
+    }
 
 }
