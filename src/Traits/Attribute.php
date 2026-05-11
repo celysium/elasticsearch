@@ -9,6 +9,11 @@ trait Attribute
     protected array $fields = [];
     protected array $attributes = [];
 
+    /**
+     * @param $key
+     * @return mixed|null
+     * @throws MissingFieldException
+     */
     public function __get($key)
     {
         $this->throwUnknownField($key);
@@ -51,6 +56,11 @@ trait Attribute
         }
     }
 
+    /**
+     * @param array $attributes
+     * @return void
+     * @throws MissingFieldException
+     */
     private function throwMissingAttributes(array $attributes): void
     {
         $keys = array_keys($attributes);
@@ -61,6 +71,11 @@ trait Attribute
         }
     }
 
+    /**
+     * @param array $attributes
+     * @return $this
+     * @throws MissingFieldException
+     */
     public function fill(array $attributes): static
     {
         foreach ($attributes as $key => $value) {

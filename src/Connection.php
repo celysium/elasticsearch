@@ -32,9 +32,4 @@ class Connection
 			->build();
 	}
 
-    public function __call(string $name, array $params)
-    {
-        return self::$client->$name(array_merge($this->params, $params));
-    }
-
 }

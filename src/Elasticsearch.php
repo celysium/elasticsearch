@@ -17,13 +17,13 @@ class Elasticsearch
 
     public function __construct(array $attributes = [])
     {
+        self::connection();
         $this->fill($attributes);
-        self::$client = Connection::getClient();
     }
 
-    public static function connection(): Connection
+    public static function connection(): Client
     {
-        return new Connection;
+        return self::$client = Connection::getClient();
     }
 
     public function count(): int
@@ -80,7 +80,7 @@ class Elasticsearch
         try {
             $response = self::$client->get($params);
 
-            return new static(array_merge($response['_source'], [$response['_id']]));
+            return new static(array_merge($response['_source'], ['id' => $id]));
         }
         catch (ClientResponseException $e) {
             if ($e->getCode() === 404) {
