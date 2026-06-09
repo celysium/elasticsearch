@@ -100,9 +100,7 @@ trait Builder
             $ranges[$field][$secondOperator] = $to;
         }
         $this->params['body']['query']['bool']['must'][] = [
-            'range' => [
-                $ranges
-            ]
+            'range' => $ranges
         ];
 
         return $this;
