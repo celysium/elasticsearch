@@ -46,33 +46,6 @@ trait Attribute
 
     /**
      * @param array $attributes
-     * @return void
-     * @throws MissingFieldException
-     */
-    private function throwUnknownFields(array $attributes): void
-    {
-        foreach ($attributes as $key => $value) {
-            $this->throwUnknownField($key);
-        }
-    }
-
-    /**
-     * @param array $attributes
-     * @return void
-     * @throws MissingFieldException
-     */
-    private function throwMissingAttributes(array $attributes): void
-    {
-        $keys = array_keys($attributes);
-        foreach ($this->fields as $field) {
-            if(!in_array($field, $keys) && $field != 'id') {
-                throw new MissingFieldException($this, $field);
-            }
-        }
-    }
-
-    /**
-     * @param array $attributes
      * @return $this
      * @throws MissingFieldException
      */

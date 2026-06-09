@@ -5,20 +5,18 @@ namespace Celysium\Elasticsearch;
 use Elastic\Elasticsearch\Exception\ClientResponseException;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Elastic\Elasticsearch\Client;
-use Celysium\Elasticsearch\Traits\Attribute;
 use Celysium\Elasticsearch\Traits\Builder;
 use Illuminate\Support\Collection;
 
 class Elasticsearch
 {
-    use Builder, Attribute;
+    use Builder;
 
     private static Client $client;
 
     public function __construct(array $attributes = [])
     {
         self::connection();
-        $this->fill($attributes);
     }
 
     public static function connection(): Client
@@ -63,12 +61,12 @@ class Elasticsearch
     {
         $data = [];
         foreach ($response['hits']['hits'] as $hit) {
-            $data[] = new static(array_merge(['id' => $hit['_id']],$hit['_source']));
+            $data[] = array_merge(['id' => $hit['_id']],$hit['_source']);
         }
         return new Collection($data);
     }
 
-    public function find(string $id, array $source = ['*']): ?static
+    public function find(string $id, array $source = ['*']): ?Collection
     {
         $params = [
             'index' => $this->index,
@@ -80,7 +78,7 @@ class Elasticsearch
         try {
             $response = self::$client->get($params);
 
-            return new static(array_merge($response['_source'], ['id' => $id]));
+            return new Collection(array_merge($response['_source'], ['id' => $id]));
         }
         catch (ClientResponseException $e) {
             if ($e->getCode() === 404) {
@@ -91,9 +89,8 @@ class Elasticsearch
         }
     }
 
-    public function create(array $attributes): static
+    public function create(array $attributes): Collection
     {
-        $this->throwMissingAttributes($attributes);
         $params = [
             'index' => $this->index,
             'body'  => $attributes
@@ -105,12 +102,11 @@ class Elasticsearch
 
         $attributes['id'] = $response['_id'];
 
-        return new static($attributes);
+        return new Collection($attributes);
     }
 
-    public function update(string $id, array $attributes): static
+    public function update(string $id, array $attributes): Collection
     {
-        $this->throwUnknownFields($attributes);
         $response = self::$client->update([
             'index' => $this->index,
             'id'    => $id,
@@ -119,10 +115,10 @@ class Elasticsearch
 
         $attributes['id'] = $response['_id'];
 
-        return new static($attributes);
+        return new Collection($attributes);
     }
 
-    public function save(): static
+    public function save(): Collection
     {
         if(isset($this->attributes['id'])) {
             return $this->update($this->attributes['id'], $this->attributes);
