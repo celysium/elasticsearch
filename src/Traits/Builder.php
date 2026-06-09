@@ -59,15 +59,15 @@ trait Builder
 
     public function sort(string $column, string $direction = 'asc', bool $isDate = false): static
     {
-        $this->params['sort'] = [
+        $this->params['body']['sort'] = [
             $column => [
                 'order' => $direction,
             ],
 
         ];
         if ($isDate) {
-            $this->params['sort'][$column]['format']       = 'strict_date_optional_time_nanos';
-            $this->params['sort'][$column]['numeric_type'] = 'date_nanos';
+            $this->params['body']['sort'][$column]['format']       = 'strict_date_optional_time_nanos';
+            $this->params['body']['sort'][$column]['numeric_type'] = 'date_nanos';
         }
         return $this;
     }
