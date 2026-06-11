@@ -20,22 +20,25 @@ trait Builder
     public function getParams(): array
     {
         $this->params['track_total_hits'] = $this->trackTotalHits;
+        $this->params['index']            = $this->index;
         return $this->params;
     }
 
     public function toJson(): string
     {
-        $params = $this->params;
-        $params = array_merge($params, $params['body']);
-        unset($params['body']);
-        unset($params['index']);
+        $params = array_merge($this->params, $this->params['body']);
+        unset($params['body'], $params['index']);
         return json_encode($params);
+    }
+
+    public function toArray(): array
+    {
+        return $this->params;
     }
 
     public function index(string $name): static
     {
-        $this->params['index'] = $name;
-        $this->index = $name;
+        $this->params['index'] = $this->index = $name;
         return $this;
     }
 
@@ -63,7 +66,6 @@ trait Builder
             $column => [
                 'order' => $direction,
             ],
-
         ];
         if ($isDate) {
             $this->params['body']['sort'][$column]['format']       = 'strict_date_optional_time_nanos';
@@ -74,7 +76,7 @@ trait Builder
 
     public function sortDesc(string $column, bool $isDate = false): static
     {
-       return $this->sort($column, 'desc', $isDate);
+        return $this->sort($column, 'desc', $isDate);
     }
 
     public function size($size = 0) : static

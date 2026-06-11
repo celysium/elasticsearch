@@ -14,7 +14,7 @@ class Elasticsearch
 
     private static Client $client;
 
-    public function __construct(array $attributes = [])
+    public function __construct()
     {
         self::connection();
     }
@@ -31,37 +31,48 @@ class Elasticsearch
         return (int) $response['count'];
     }
 
-    public function search(): Collection
+    public function search(array $source = ['*']): Collection
     {
+        if($source != ['*']) {
+            $params['_source'] = $source;
+        }
+
         $params = $this->getParams();
         $response = self::$client->search($params);
+
         if (isset($this->params['body']['aggs'])) {
             return new Collection($response['aggregations']);
         } else {
-            return $this->response($response);
+            return $this->format($response);
         }
     }
 
-    public function pagination($size = 15, $page = 1, array $options = []): LengthAwarePaginator
+    public function paginate($size = null, $page = 1, array $source = ['*']): LengthAwarePaginator
     {
-        $this->size($size);
+        $this->size($size ?? 15);
+
+        $page = $page > 0 ?: 1;
 
         $this->params['from'] = ($page - 1) * $size;
+
+        if($source != ['*']) {
+            $params['_source'] = $source;
+        }
 
         $params = $this->getParams();
         $response = self::$client->search($params);
 
         $total  = $response['hits']['total']['value'];
-        $response = $this->response($response);
+        $response = $this->format($response);
 
-        return new LengthAwarePaginator($response, $total, $size, $page, $options);
+        return new LengthAwarePaginator($response, $total, $size, $page);
     }
 
-    private function response($response): Collection
+    private function format($response): Collection
     {
         $data = [];
         foreach ($response['hits']['hits'] as $hit) {
-            $data[] = array_merge(['id' => $hit['_id']],$hit['_source']);
+            $data[] = (object) $hit['_source'];
         }
         return new Collection($data);
     }
@@ -77,8 +88,7 @@ class Elasticsearch
         }
         try {
             $response = self::$client->get($params);
-
-            return new Collection(array_merge($response['_source'], ['id' => $id]));
+            return $this->format($response);
         }
         catch (ClientResponseException $e) {
             if ($e->getCode() === 404) {
@@ -99,10 +109,7 @@ class Elasticsearch
             $params['id'] = $attributes['id'];
         }
         $response = self::$client->index($params);
-
-        $attributes['id'] = $response['_id'];
-
-        return new Collection($attributes);
+        return $this->format($response);
     }
 
     public function update(string $id, array $attributes): Collection
@@ -113,17 +120,15 @@ class Elasticsearch
             'body'  => $attributes
         ]);
 
-        $attributes['id'] = $response['_id'];
-
-        return new Collection($attributes);
+        return $this->format($response);
     }
 
-    public function save(): Collection
+    public function save(array $attributes): Collection
     {
-        if(isset($this->attributes['id'])) {
-            return $this->update($this->attributes['id'], $this->attributes);
+        if(isset($attributes['id'])) {
+            return $this->update($attributes['id'], $attributes);
         }
-        return $this->create($this->attributes);
+        return $this->create($attributes);
     }
 
     public function delete(string $id): string
